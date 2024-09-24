@@ -1,6 +1,10 @@
 const express = require("express");
 const mysql = require("mysql2/promise");
 
+const cors = require("cors");
+
+/* Comentario pq esta es la info previa a la petición a la BD 
+
 const fakeMovies = [
   {
     id: 1,
@@ -22,9 +26,7 @@ const fakeMovies = [
     year: 2010,
     director: "Christopher Nolan",
   },
-];
-
-const cors = require("cors");
+];*/
 
 // create and config server
 const server = express();
@@ -33,31 +35,63 @@ server.use(express.json());
 
 // init express aplication
 const serverPort = 4000;
+
 server.listen(serverPort, () => {
   console.log(`Server listening at http://localhost:${serverPort}`);
 });
 
-server.get("/movies", (req, res) => {
+/*server.get("/movies", (req, res) => {
   res.send({
     success: true,
     movies: fakeMovies,
   });
 });
+*/
 
-//Connexion mysql
-/*const conn= await getConnection ();
-if ( !conn){
-  res.status(500).json({success: false, error:'Error en la conexión'});
-  return
-}*/
+async function getConnection() {
+  try {
+    const conn = await mysql.createConnection({
+      host: "127.0.0.1", // = localhost
+      user: "root",
+      password: "patri",
+      database: "netflix",
+    });
 
-//Lanzar query
+    await conn.connect();
 
-/*
-const [results] = await conn.query ('SELECT * FROM magas;');
-//DEvolver reslutados como Json
+    return conn;
+  } catch (error) {
+    console.log(error);
 
-res.json(results);
-//Cerrar connexión
+    return null;
+  }
+}
+// CAMBIO!!!
+/*server.get("/", async (req, res) => {
+  const conn = await getConnection();
 
-await conn.close();*/
+  if (conn) {
+    res.send("Me conecté");
+  } else {
+    res.status(500).send("Algo fallaaaa");
+  }
+});
+*/
+
+server.get("/movies", async (req, res) => {
+  const conn = await getConnection();
+
+  if (!conn) {
+    res.status(500).send("Se rompió");
+    return;
+  }
+  const [results, columns] = await conn.query("SELECT * FROM movies;");
+
+  //const results = arrayDelConnQuery[0];
+
+  console.log(results);
+
+  res.json(results);
+
+  conn.end();
+});
